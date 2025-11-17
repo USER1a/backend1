@@ -5,10 +5,12 @@ import fs from 'fs';
 import path from 'path';
 
 const log = scopedLogger('metrics');
-const METRICS_FILE = '.metrics.json';
-const METRICS_DAILY_FILE = '.metrics_daily.json';
-const METRICS_WEEKLY_FILE = '.metrics_weekly.json';
-const METRICS_MONTHLY_FILE = '.metrics_monthly.json';
+// Use /tmp directory in serverless environments (Vercel, AWS Lambda)
+const METRICS_DIR = process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME ? '/tmp' : '.';
+const METRICS_FILE = path.join(METRICS_DIR, '.metrics.json');
+const METRICS_DAILY_FILE = path.join(METRICS_DIR, '.metrics_daily.json');
+const METRICS_WEEKLY_FILE = path.join(METRICS_DIR, '.metrics_weekly.json');
+const METRICS_MONTHLY_FILE = path.join(METRICS_DIR, '.metrics_monthly.json');
 
 // Global registries
 const registries = {
@@ -109,6 +111,19 @@ async function createMetrics(registry: Registry, interval: string): Promise<Metr
   };
 
   return newMetrics;
+}
+
+function getMetricsFileName(interval: string = 'default'): string {
+  switch (interval) {
+    case 'daily':
+      return METRICS_DAILY_FILE;
+    case 'weekly':
+      return METRICS_WEEKLY_FILE;
+    case 'monthly':
+      return METRICS_MONTHLY_FILE;
+    default:
+      return METRICS_FILE;
+  }
 }
 
 async function saveMetricsToFile(interval: string = 'default') {
